@@ -1,0 +1,29 @@
+PROJECT ABSTRACT: ORBITGUARD
+--------------------------------------------------------------------------------
+1. PROJECT TITLE: OrbitGuard
+2. TARGET THEME: Space Situational Awareness & Space Safety (SUPERNOVA: Beyond the Cosmos)
+3. TEAM NAME: Team The Bit Busters (DRIEMS University)
+
+--------------------------------------------------------------------------------
+PROBLEM STATEMENT:
+With the rapid commercialization of space, Low Earth Orbit (LEO) has become highly congested. Thousands of active satellites operate alongside a growing cloud of lethal space debris. A single collision can trigger a catastrophic chain reaction (Kessler Syndrome), destroying billions of dollars of critical infrastructure. While organizations like CelesTrak publish orbital data (Two-Line Elements or TLEs), this raw dataset is functionally unreadable for general operators, academic researchers, and emergency response planners without expensive, complex orbital mechanics software. There is a critical need for an accessible, real-time tool that ingests public orbital data, predicts future trajectories, and ranks collision threats clearly.
+
+PROPOSED SOLUTION:
+OrbitGuard is a web-based, real-time satellite conjunction screening and collision risk dashboard. The platform automatically fetches, processes, and propagates satellite orbits, screening for close-approach events ("conjunctions") over customizable look-ahead windows. Rather than overwhelming operators with raw orbital coordinate grids, OrbitGuard translates complex physical metrics into a single, intuitive 0–100 collision risk score and urgency level (Critical, High, Moderate, Low). It presents these threats through a modern, responsive web dashboard complete with interactive 3D orbital trajectory visualizations.
+
+KEY TECHNICAL HIGHLIGHTS & PIPELINE:
+OrbitGuard is structured around a five-stage data and processing pipeline:
+
+1. Data Ingestion & Caching: Automatically fetches live TLE orbital records from CelesTrak groups (e.g., active satellites, space stations, and space debris). A robust local cache layer prevents API throttling, with an offline fallback mechanism ensuring the system runs reliably even during venue network outages.
+2. SGP4 Trajectory Propagation: Integrates the standard SGP4 orbital model to propagate positions and velocities (x, y, z vectors in the TEME reference frame) at precise, minute-by-minute timesteps over a 72-hour forecast window.
+3. Precision Conjunction Screening: Performs pairwise closest-approach analysis on the propagated orbits. To eliminate false alarms, OrbitGuard applies a custom 0.5 km minimum distance floor. This ensures that docked space station modules (such as components of the ISS or Tiangong) are recognized as a single rigid body, filtering out non-hazardous "docking" states to focus entirely on genuine independent approach threats.
+4. Composite Risk Scoring Engine: Translates geometric close approaches into action. It calculates a 0–100 risk index by combining normalized miss distance (70% weight) and kinetic impact severity based on relative velocity (30% weight), alongside time-to-conjunction urgency categories.
+5. Interactive Front-End Dashboard: A clean, premium dashboard built using React and Vite. It features a responsive grid showing threat levels, statistical summaries, and an interactive Three.js 3D viewport that renders the orbital paths of colliding bodies.
+
+IMPACT & FUTURE ROADMAP:
+OrbitGuard democratizes space safety, putting advanced situational awareness in the hands of satellite operators, researchers, and space enthusiasts. By utilizing standard web technologies, the app runs locally or in cloud environments with minimal overhead. 
+
+For version 2.0, the roadmap includes:
+- Spatial Grid Pre-Filtering: Transitioning from O(N²) comparisons to spatial hashing/orbital altitude band pre-filtering to scale the pipeline to screen the entire public catalog of 25,000+ tracked space objects.
+- Persistence Layer: Adding a database to track how the predicted risk of a specific conjunction event evolves over successive TLE updates.
+- Proactive Alerts: E-mail or webhook notifications triggered when a critical-class threat is flagged.
