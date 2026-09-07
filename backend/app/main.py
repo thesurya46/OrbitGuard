@@ -16,9 +16,12 @@ or simply:
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from . import config
 from .conjunction import find_conjunctions
@@ -31,6 +34,8 @@ from .models import (
 from .propagator import propagate_all
 from .risk_scoring import score_all
 from .tle_fetcher import TLEFetchError, get_tles
+
+FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
 app = FastAPI(
     title="OrbitGuard API",
@@ -110,3 +115,18 @@ def run_conjunction_pipeline(req: ConjunctionRequest) -> ConjunctionResponse:
         threshold_km=req.threshold_km,
         events=scored_events,
     )
+
+
+if FRONTEND_DIST.exists():
+    app.mount(
+        "/assets",
+        StaticFiles(directory=FRONTEND_DIST / "assets"),
+        name="frontend-assets",
+    )
+
+    @app.get("/{full_path:path}")
+    def serve_frontend(full_path: str) -> FileResponse:
+        requested_file = FRONTEND_DIST / full_path
+        if full_path and requested_file.is_file():
+            return FileResponse(requested_file)
+        return FileResponse(FRONTEND_DIST / "index.html")
