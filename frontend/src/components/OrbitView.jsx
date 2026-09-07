@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 
 /**
@@ -15,6 +15,8 @@ import * as THREE from "three";
 export default function OrbitView({ event }) {
   const mountRef = useRef(null);
   const stateRef = useRef({});
+  const [paused, setPaused] = useState(false);
+  const [showPaths, setShowPaths] = useState(true);
 
   useEffect(() => {
     const mount = mountRef.current;
@@ -72,12 +74,15 @@ export default function OrbitView({ event }) {
       const material = new THREE.LineBasicMaterial({ color });
       const line = new THREE.LineLoop(geometry, material);
       scene.add(line);
-      return points;
+      return { points, line };
     }
 
     const orbitRadius = 3.4;
-    const pathA = orbitCurve(orbitRadius, 51.6, 0, 0xff7a33);
-    const pathB = orbitCurve(orbitRadius + 0.15, 51.6, 4, 0x4ec4ff);
+    const orbitA = orbitCurve(orbitRadius, 51.6, 0, 0xff7a33);
+    const orbitB = orbitCurve(orbitRadius + 0.15, 51.6, 4, 0x4ec4ff);
+    const pathA = orbitA.points;
+    const pathB = orbitB.points;
+    const orbitLines = [orbitA.line, orbitB.line];
 
     const markerA = new THREE.Mesh(
       new THREE.SphereGeometry(0.09, 16, 16),
@@ -99,13 +104,28 @@ export default function OrbitView({ event }) {
       const idxB = (frame + 6) % pathB.length;
       markerA.position.copy(pathA[idxA]);
       markerB.position.copy(pathB[idxB]);
-      earth.rotation.y += 0.0015;
+      if (!stateRef.current.paused) {
+        earth.rotation.y += 0.0015;
+      }
       renderer.render(scene, camera);
       raf = requestAnimationFrame(animate);
     };
     animate();
 
-    stateRef.current = { renderer, mount };
+    stateRef.current = {
+      renderer,
+      mount,
+      camera,
+      paused,
+      paths: showPaths,
+      reset: () => {
+        camera.position.set(0, 4, 11);
+        camera.lookAt(0, 0, 0);
+      },
+      setPaths: (visible) => {
+        orbitLines.forEach((line) => { line.visible = visible; });
+      },
+    };
 
     const handleResize = () => {
       const w = mount.clientWidth;
@@ -123,9 +143,26 @@ export default function OrbitView({ event }) {
     };
   }, [event?.norad_id_a, event?.norad_id_b]);
 
+  useEffect(() => {
+    stateRef.current.paused = paused;
+    stateRef.current.paths = showPaths;
+    stateRef.current.setPaths?.(showPaths);
+  }, [paused, showPaths]);
+
   return (
     <div className="orbit-view">
       <div ref={mountRef} />
+      <div className="orbit-controls">
+        <button className="quiet-button" onClick={() => setPaused((value) => !value)}>
+          {paused ? "Resume motion" : "Pause motion"}
+        </button>
+        <button className="quiet-button" onClick={() => stateRef.current.reset?.()}>
+          Reset view
+        </button>
+        <button className="quiet-button" onClick={() => setShowPaths((value) => !value)}>
+          {showPaths ? "Hide paths" : "Show paths"}
+        </button>
+      </div>
       <div className="orbit-legend">
         <span>
           <span className="legend-dot" style={{ background: "#ff7a33" }} />
