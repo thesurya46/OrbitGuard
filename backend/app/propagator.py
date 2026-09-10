@@ -71,7 +71,7 @@ def propagate_object(
         record=record,
         t_offsets=t_offsets,
         positions_km=positions,
-        velocities_kmps=velocities,
+        velocities_kmps=velocities, 
     )
 
 
